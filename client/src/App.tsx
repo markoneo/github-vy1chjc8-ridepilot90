@@ -23,6 +23,7 @@ const Companies = lazy(() => import('./components/settings/Companies'));
 const CarTypes = lazy(() => import('./components/settings/CarTypes'));
 const Drivers = lazy(() => import('./components/settings/Drivers'));
 const Payments = lazy(() => import('./components/settings/Payments'));
+const GeneralSettings = lazy(() => import('./components/settings/GeneralSettings'));
 const CompletedProjects = lazy(() => import('./components/CompletedProjects'));
 const Hero = lazy(() => import('./components/Hero'));
 const Features = lazy(() => import('./components/Features'));
@@ -116,6 +117,7 @@ function AppContent() {
               <Route path="/financial-report" element={<ProtectedRoute><FinancialReport /></ProtectedRoute>} />
               <Route path="/edit-project/:id" element={<ProtectedRoute><EditProject /></ProtectedRoute>} />
               <Route path="/voucher/:id" element={<ProtectedRoute><VoucherGenerator displayMode="page" projectId={''} /></ProtectedRoute>} />
+              <Route path="/settings/general" element={<ProtectedRoute><GeneralSettings /></ProtectedRoute>} />
               <Route path="/settings/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
               <Route path="/settings/car-types" element={<ProtectedRoute><CarTypes /></ProtectedRoute>} />
               <Route path="/settings/drivers" element={<ProtectedRoute><Drivers /></ProtectedRoute>} />

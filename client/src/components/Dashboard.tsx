@@ -234,9 +234,18 @@ export default function Dashboard() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedExportDate, setSelectedExportDate] = useState('');
+  const [dailyCapacity, setDailyCapacity] = useState<number>(10);
 
   // Memoized company color cache
   const [companyColorCache] = useState<Record<string, string>>({});
+
+  // Load daily capacity from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('ridepilot_daily_capacity');
+    if (saved) {
+      setDailyCapacity(parseInt(saved, 10));
+    }
+  }, []);
 
   // Memoized helper functions
   const getCompanyName = useCallback((id: string) => {
@@ -558,6 +567,28 @@ export default function Dashboard() {
   // Active projects for display
   const activeProjects = useMemo(() => projects.filter(p => p.status === 'active'), [projects]);
 
+  // Group projects by date and check for capacity warnings
+  const projectsByDate = useMemo(() => {
+    const grouped: Record<string, typeof projects> = {};
+    activeProjects.forEach(project => {
+      if (!grouped[project.date]) {
+        grouped[project.date] = [];
+      }
+      grouped[project.date].push(project);
+    });
+    return grouped;
+  }, [activeProjects]);
+
+  const capacityWarnings = useMemo(() => {
+    const warnings: Array<{ date: string; count: number }> = [];
+    Object.entries(projectsByDate).forEach(([date, projects]) => {
+      if (projects.length > dailyCapacity) {
+        warnings.push({ date, count: projects.length });
+      }
+    });
+    return warnings.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [projectsByDate, dailyCapacity]);
+
   // Enhanced stats data
   const enhancedStats = useMemo(() => [
     {
@@ -864,12 +895,57 @@ export default function Dashboard() {
               <p className="font-medium">Error loading data</p>
               <p className="text-sm mt-1">{error}</p>
             </div>
-            <button 
+            <button
               onClick={handleManualRefresh}
               className="ml-auto bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded-md text-sm"
             >
               Retry
             </button>
+          </div>
+        )}
+
+        {capacityWarnings.length > 0 && viewMode !== 'analytics' && (
+          <div className="mb-6 space-y-3">
+            {capacityWarnings.map((warning) => {
+              const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+              });
+
+              return (
+                <motion.div
+                  key={warning.date}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-lg p-4 shadow-sm"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 bg-amber-100 p-2 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                          <h3 className="text-sm font-semibold text-amber-900">
+                            High workload on {formattedDate}
+                          </h3>
+                          <p className="text-sm text-amber-800 mt-1">
+                            You have <strong>{warning.count} projects</strong> scheduled for this date, which exceeds your daily limit of <strong>{dailyCapacity}</strong>
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate('/settings/general')}
+                          className="flex-shrink-0 text-xs font-medium text-amber-700 hover:text-amber-900 underline"
+                        >
+                          Adjust limit
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
 
@@ -899,7 +975,8 @@ export default function Dashboard() {
                     { icon: BarChart2, label: "Statistics", action: () => navigate('/statistics'), color: "emerald" },
                     { icon: FileText, label: "Financial Report", action: () => navigate('/financial-report'), color: "purple" },
                     { icon: Users, label: "Manage Drivers", action: () => navigate('/settings/drivers'), color: "teal" },
-                    { icon: Settings, label: "Settings", action: () => navigate('/settings/companies'), color: "amber" }
+                    { icon: Settings2, label: "General Settings", action: () => navigate('/settings/general'), color: "slate" },
+                    { icon: Settings, label: "Companies & Types", action: () => navigate('/settings/companies'), color: "amber" }
                   ].map((action, index) => {
                     const Icon = action.icon;
                     return (
