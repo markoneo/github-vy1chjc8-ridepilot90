@@ -6,17 +6,44 @@ const DAILY_CAPACITY_KEY = 'ridepilot_daily_capacity';
 
 export default function GeneralSettings() {
   const [dailyCapacity, setDailyCapacity] = useState<number>(10);
+  const [inputValue, setInputValue] = useState<string>('10');
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(DAILY_CAPACITY_KEY);
     if (saved) {
-      setDailyCapacity(parseInt(saved, 10));
+      const value = parseInt(saved, 10);
+      setDailyCapacity(value);
+      setInputValue(value.toString());
     }
   }, []);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= 100) {
+      setDailyCapacity(numValue);
+    }
+  };
+
+  const handleInputBlur = () => {
+    const numValue = parseInt(inputValue, 10);
+    if (isNaN(numValue) || numValue < 1) {
+      setInputValue('1');
+      setDailyCapacity(1);
+    } else if (numValue > 100) {
+      setInputValue('100');
+      setDailyCapacity(100);
+    } else {
+      setInputValue(numValue.toString());
+    }
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    handleInputBlur();
     localStorage.setItem(DAILY_CAPACITY_KEY, dailyCapacity.toString());
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
@@ -80,8 +107,9 @@ export default function GeneralSettings() {
                 type="number"
                 min="1"
                 max="100"
-                value={dailyCapacity}
-                onChange={(e) => setDailyCapacity(parseInt(e.target.value, 10) || 1)}
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
                 className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -110,9 +138,12 @@ export default function GeneralSettings() {
                 onClick={() => {
                   const saved = localStorage.getItem(DAILY_CAPACITY_KEY);
                   if (saved) {
-                    setDailyCapacity(parseInt(saved, 10));
+                    const value = parseInt(saved, 10);
+                    setDailyCapacity(value);
+                    setInputValue(value.toString());
                   } else {
                     setDailyCapacity(10);
+                    setInputValue('10');
                   }
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
