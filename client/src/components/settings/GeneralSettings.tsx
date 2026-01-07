@@ -50,7 +50,7 @@ export default function GeneralSettings() {
   };
 
   return (
-    <SettingsLayout title="General Settings">
+    <SettingsLayout title="Project Capacity Settings">
       <div className="p-6 space-y-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start">
@@ -61,11 +61,11 @@ export default function GeneralSettings() {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-blue-800">
-                About General Settings
+                About Project Capacity Settings
               </h3>
               <div className="mt-2 text-sm text-blue-700">
                 <p>
-                  Configure general application settings including capacity warnings and other dashboard preferences.
+                  Configure your daily project capacity limits and receive warnings when approaching or exceeding your workload threshold.
                 </p>
               </div>
             </div>
