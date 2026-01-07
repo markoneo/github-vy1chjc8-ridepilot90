@@ -580,13 +580,21 @@ export default function Dashboard() {
   }, [activeProjects]);
 
   const capacityWarnings = useMemo(() => {
-    const warnings: Array<{ date: string; count: number }> = [];
+    const atCapacity: Array<{ date: string; count: number }> = [];
+    const overCapacity: Array<{ date: string; count: number }> = [];
+
     Object.entries(projectsByDate).forEach(([date, projects]) => {
-      if (projects.length > dailyCapacity) {
-        warnings.push({ date, count: projects.length });
+      if (projects.length === dailyCapacity) {
+        atCapacity.push({ date, count: projects.length });
+      } else if (projects.length > dailyCapacity) {
+        overCapacity.push({ date, count: projects.length });
       }
     });
-    return warnings.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return {
+      atCapacity: atCapacity.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+      overCapacity: overCapacity.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    };
   }, [projectsByDate, dailyCapacity]);
 
   // Enhanced stats data
@@ -904,9 +912,50 @@ export default function Dashboard() {
           </div>
         )}
 
-        {capacityWarnings.length > 0 && viewMode !== 'analytics' && (
+        {(capacityWarnings.atCapacity.length > 0 || capacityWarnings.overCapacity.length > 0) && viewMode !== 'analytics' && (
           <div className="mb-6 space-y-3">
-            {capacityWarnings.map((warning) => {
+            {capacityWarnings.atCapacity.map((warning) => {
+              const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+              });
+
+              return (
+                <motion.div
+                  key={warning.date}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-300 rounded-lg p-4 shadow-sm"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 bg-blue-100 p-2 rounded-lg">
+                      <AlertCircle className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                          <h3 className="text-sm font-semibold text-blue-900">
+                            At capacity on {formattedDate}
+                          </h3>
+                          <p className="text-sm text-blue-800 mt-1">
+                            You have <strong>{warning.count} projects</strong> scheduled, reaching your daily limit. Avoid adding more to prevent overbooking.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => navigate('/settings/general')}
+                          className="flex-shrink-0 text-xs font-medium text-blue-700 hover:text-blue-900 underline"
+                        >
+                          Adjust limit
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+
+            {capacityWarnings.overCapacity.map((warning) => {
               const formattedDate = new Date(warning.date).toLocaleDateString('en-US', {
                 weekday: 'short',
                 month: 'short',
@@ -928,7 +977,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div>
                           <h3 className="text-sm font-semibold text-amber-900">
-                            High workload on {formattedDate}
+                            Over capacity on {formattedDate}
                           </h3>
                           <p className="text-sm text-amber-800 mt-1">
                             You have <strong>{warning.count} projects</strong> scheduled for this date, which exceeds your daily limit of <strong>{dailyCapacity}</strong>
